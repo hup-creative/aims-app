@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { login } from '../api/auth';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState('');
+  const { login, loading } = useAuth();
   const navigate = useNavigate();
 
   const { email, password } = formData;
@@ -19,27 +19,18 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setFormError('');
     
     if (!email || !password) {
-      setError('Please fill in all fields');
+      setFormError('Please fill in all fields');
       return;
     }
     
     try {
-      setLoading(true);
-      const response = await login({ email, password });
-      
-      // Save token to localStorage
-      localStorage.setItem('token', response.token);
-      
-      // Redirect to dashboard
+      await login({ email, password });
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
-      console.error('Login error:', err);
-    } finally {
-      setLoading(false);
+      setFormError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     }
   };
 
@@ -58,7 +49,7 @@ const Login = () => {
           </p>
         </div>
         
-        {error && (
+        {formError && (
           <div className="bg-red-50 border-l-4 border-red-400 p-4">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -67,13 +58,14 @@ const Login = () => {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
+                <p className="text-sm text-red-700">{formError}</p>
               </div>
             </div>
           </div>
         )}
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <input type="hidden" name="remember" value="true" />
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="email" className="sr-only">Email address</label>

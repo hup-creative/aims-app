@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { register } from '../api/auth';
+import { useAuth } from '../context/AuthContext';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -9,8 +9,8 @@ const Register = () => {
     password: '',
     passwordConfirm: ''
   });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState('');
+  const { register, loading } = useAuth();
   const navigate = useNavigate();
 
   const { name, email, password, passwordConfirm } = formData;
@@ -21,37 +21,29 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setFormError('');
     
+    // Validation
     if (!name || !email || !password || !passwordConfirm) {
-      setError('Please fill in all fields');
+      setFormError('Please fill in all fields');
       return;
     }
     
     if (password !== passwordConfirm) {
-      setError('Passwords do not match');
+      setFormError('Passwords do not match');
       return;
     }
     
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setFormError('Password must be at least 6 characters');
       return;
     }
     
     try {
-      setLoading(true);
-      const response = await register({ name, email, password });
-      
-      // Save token to localStorage
-      localStorage.setItem('token', response.token);
-      
-      // Redirect to dashboard
+      await register({ name, email, password });
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
-      console.error('Registration error:', err);
-    } finally {
-      setLoading(false);
+      setFormError(err.response?.data?.message || 'Registration failed. Please try again.');
     }
   };
 
@@ -70,7 +62,7 @@ const Register = () => {
           </p>
         </div>
         
-        {error && (
+        {formError && (
           <div className="bg-red-50 border-l-4 border-red-400 p-4">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -79,7 +71,7 @@ const Register = () => {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
+                <p className="text-sm text-red-700">{formError}</p>
               </div>
             </div>
           </div>
